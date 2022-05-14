@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package orchestrationpb;
+
+option go_package = "github.com/relab/hotstuff/internal/proto/orchestrationpb";
+
+import "google/protobuf/duration.proto";
+
+/* -------------------------------------------------------------------------- */
+/*                              General messages                              */
+/* -------------------------------------------------------------------------- */
+
+// ReplicaOpts contains the confiugration options for a replica.
+message ReplicaOpts {
+  // The replica's ID.
+  uint32 ID = 1;
+  // The replica's private key.
+  bytes PrivateKey = 3;
+  // The replica's public key.
+  bytes PublicKey = 16;
+  // Determines whether TLS should be used.
+  bool UseTLS = 4;
+  // The replica's TLS certificate.
+  optional bytes Certificate = 5;
+  // The private key of the TLS certificate.
+  optional bytes CertificateKey = 6;
+  // The certificate authority that created the TLS certificates.
+  optional bytes CertificateAuthority = 7;
+  // The name of the crypto implementation to use.
+  string Crypto = 8;
+  // The name of the consensus implementation to use.
+  string Consensus = 9;
+  // The name of the leader rotation algorithm to use.
+  string LeaderRotation = 10;
+  // The number of client commands that should be batched together.
+  uint32 BatchSize = 11;
+  // The timeout of the initial connection setup.
+  google.protobuf.Duration ConnectTimeout = 17;
+  // The initial view duration.
+  google.protobuf.Duration InitialTimeout = 12;
+  // The maximum view timeout.
+  google.protobuf.Duration MaxTimeout = 19;
+  // The number of samples used to calculate view duration.
+  uint32 TimeoutSamples = 13;
+  // The number that the old view duration should be multiplied by when a new
+  // timeout happens.
+  float TimeoutMultiplier = 14;
+  // The byzantine strategy to use. If empty, the replica will act normally.
+  string ByzantineStrategy = 18;
+  // A shared random number for seeding random number generators.
+  int64 SharedSeed = 20;
+  // A list of modules to load.
+  repeated string Modules = 21;
+}
+
+// ReplicaInfo is the information that the replicas need about each other.
+message ReplicaInfo {
+  // The ID of the replica.
+  uint32 ID = 1;
+  // The IP address of the replica.
+  string Address = 2;
+  // The public key of the replica.
+  bytes PublicKey = 3;
+  // The port that other replicas should connect to.
+  uint32 ReplicaPort = 4;
+  // The port that clients should connect to.
+  uint32 ClientPort = 5;
+}
+
+message ClientOpts {
+  // The client's ID.
+  uint32 ID = 1;
+  // Determines whether TLS should be used.
+  bool UseTLS = 4;
+  // The maximum number of concurrent requests.
+  uint32 MaxConcurrent = 8;
+  // The size in bytes of each command.
+  uint32 PayloadSize = 9;
+  // The timeout of the initial connection.
+  google.protobuf.Duration ConnectTimeout = 10;
+  // The limit on how many commands can be sent per second.
+  double RateLimit = 11;
+  // The amount of commands per second to increase the rate limit by.
+  double RateStep = 12;
+  // How often to increase the rate limit.
+  google.protobuf.Duration RateStepInterval = 13;
+  // The timeout for a command.
+  google.protobuf.Duration Timeout = 14;
+}
+
+// ReplicaConfiguration is a configuration of replicas.
+message ReplicaConfiguration { map<uint32, ReplicaInfo> Replicas = 1; }
+
+/* -------------------------------------------------------------------------- */
+/*                        RPC request/response messages                       */
+/* -------------------------------------------------------------------------- */
+
+/* ---------------------------- CreateReplica RPC --------------------------- */
+
+message CreateReplicaRequest { map<uint32, ReplicaOpts> Replicas = 1; }
+
+message CreateReplicaResponse { map<uint32, ReplicaInfo> Replicas = 1; }
+
+/* ---------------------------- StartReplica RPC ---------------------------- */
+
+message StartReplicaRequest {
+  // The replica IDs that should be started.
+  repeated uint32 IDs = 1;
+  // The configuration of replicas to connect to.
+  map<uint32, ReplicaInfo> Configuration = 2;
+}
+
+message StartReplicaResponse {}
+
+/* ----------------------------- StopReplica RPC ---------------------------- */
+
+message StopReplicaRequest { repeated uint32 IDs = 1; }
+
+message StopReplicaResponse { map<uint32, bytes> Hashes = 1; }
+
+/* ----------------------------- StartClient RPC ---------------------------- */
+
+message StartClientRequest {
+  // The clients to create.
+  map<uint32, ClientOpts> Clients = 1;
+  // The certificate authority that created the TLS certificates.
+  optional bytes CertificateAuthority = 7;
+  // The replicas to connect to.
+  map<uint32, ReplicaInfo> Configuration = 10;
+}
+
+message StartClientResponse {}
+
+/* ----------------------------- StopClient RPC ----------------------------- */
+
+message StopClientRequest { repeated uint32 IDs = 1; }
+
+message StopClientResponse {}
+
+/* -------------------------------- Quit RPC -------------------------------- */
+
+message QuitRequest {}
+
+/* -------------------------------------------------------------------------- */

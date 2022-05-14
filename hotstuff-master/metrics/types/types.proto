@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package types;
+
+option go_package = "github.com/relab/hotstuff/metrics/types";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+message StartEvent { Event Event = 1; }
+
+// Event is the basic type that is recorded by hotstuff.
+// It contains the ID of the replica/client, the type (replica/client),
+// the timestamp of the event, and the data.
+message Event {
+  uint32 ID = 1;
+  bool Client = 2;
+  google.protobuf.Timestamp Timestamp = 3;
+}
+
+message ThroughputMeasurement {
+  Event Event = 1;
+  uint64 Commits = 2;
+  uint64 Commands = 3;
+  google.protobuf.Duration Duration = 4;
+}
+
+message LatencyMeasurement {
+  Event Event = 1;
+  double Latency = 2;
+  double Variance = 3;
+  uint64 Count = 4;
+}
+
+message ViewTimeouts {
+  Event Event = 1;
+  // Number of views since last reading.
+  uint64 Views = 2;
+  // Number of view timeouts.
+  uint64 Timeouts = 3;
+}
